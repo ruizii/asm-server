@@ -214,29 +214,30 @@ exit_err:
 section .data
     BUFFER_SIZE: equ 1024
 
-    listen_msg: db "Escuchando en 0.0.0.0:8000", 0x0a, 0x0a
+    listen_msg: db `Escuchando en 0.0.0.0:8000\n\n`
     listen_msg_len: equ $ - listen_msg
 
-    sock_error_msg: db "Error: socket", 0x0a
+    sock_error_msg: db `Error: socket\n`
     sock_error_msg_len: equ $ - sock_error_msg
 
-    bind_error_msg: db "Error: bind", 0x0a
+    bind_error_msg: db `Error: bind\n`
     bind_error_msg_len: equ $ - bind_error_msg
 
-    listen_error_msg: db "Error: listen", 0x0a
+    listen_error_msg: db `Error: listen\n`
     listen_error_msg_len: equ $ - listen_error_msg
 
-    write_error_msg: db "Error: write", 0x0a
+    write_error_msg: db `Error: write\n`
     write_error_msg_len: equ $ - write_error_msg
 
-    read_error_msg: db "Error: read", 0x0a
+    read_error_msg: db `Error: read\n`
     read_error_msg_len: equ $ - read_error_msg
 
-    RES_200_OK: db "HTTP/1.1 200 OK", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
+    RES_200_OK: db `HTTP/1.1 200 OK\r\nServer: asm\r\n\r\n`
     RES_200_OK_LEN: equ $ - RES_200_OK
 
 section .bss
-    s: resd 1
-    client_fd: resd 1
+    s: resb 4
+    client_fd: resb 4
     buffer: resb 1024
     file_buffer: resb 4096
+    filename: resb 256
