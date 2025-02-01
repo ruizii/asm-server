@@ -249,22 +249,22 @@ exit_err:
 
 section .data
 
-    listen_msg: db "Escuchando en 0.0.0.0:8000", 0x10, 0x10
+    listen_msg: db "Escuchando en 0.0.0.0:8000", 0x0a, 0x0a
     .len: equ $ - listen_msg
 
-    sock_error_msg: db "Error: socket", 0x10
+    sock_error_msg: db "Error: socket", 0x0a
     .len: equ $ - sock_error_msg
 
-    bind_error_msg: db "Error: bind", 0x10
+    bind_error_msg: db "Error: bind", 0x0a
     .len: equ $ - bind_error_msg
 
-    listen_error_msg: db "Error: listen", 0x10
+    listen_error_msg: db "Error: listen", 0x0a
     .len: equ $ - listen_error_msg
 
-    write_error_msg: db "Error: write", 0x10
+    write_error_msg: db "Error: write", 0x0a
     .len: equ $ - write_error_msg
 
-    read_error_msg: db "Error: read", 0x10
+    read_error_msg: db "Error: read", 0x0a
     .len: equ $ - read_error_msg
 
     RES_200_OK: db "HTTP/1.1 200 OK", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
