@@ -213,7 +213,6 @@ write3:
 
     cmp rax, -1
     je .error
-    jmp mainloop
     jmp .continue
 
 .error:
@@ -229,6 +228,8 @@ write3:
     mov rdi, [client_fd]
     mov rax, CLOSE
     syscall
+
+    jmp mainloop
 
     mov rdi, [s]
     mov rax, CLOSE
