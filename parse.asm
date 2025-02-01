@@ -22,6 +22,7 @@ methodname_loop:
 
 .exitloop:
     inc rcx
+    mov byte [method+rcx], 0
     mov [method.len], rcx
     add r8, rcx
     inc r8
@@ -42,6 +43,7 @@ filename_loop:
 
 .exitloop:
     inc rcx
+    mov byte [filename+rcx], 0
     mov [filename.len], rcx
     lea rax, [filename]
 
