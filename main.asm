@@ -196,12 +196,12 @@ parse:
     lea rdi, [buffer]
     call parse_filename ; Nombre del archivo en filename de parse.asm
 
-;dbg:
-;    mov rdi, STDOUT
-;    lea rsi, [filename]
-;    mov rdx, 3
-;    mov rax, WRITE
-;    syscall
+dbg:
+    mov rdi, STDOUT
+    lea rsi, [filename]
+    mov rdx, filename.len
+    mov rax, WRITE
+    syscall
 
 
 write3:
@@ -231,10 +231,10 @@ write3:
 
     jmp mainloop
 
+exit:
     mov rdi, [s]
     mov rax, CLOSE
     syscall
-
 
     leave
     mov rdi, 0
