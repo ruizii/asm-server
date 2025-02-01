@@ -1,14 +1,25 @@
 default rel
 
-%define AF_INET 2
+; Syscalls
 %define ACCEPT 43
-%define SOCK_STREAM 1
 %define SOCKET 41
-%define STDOUT 1
+%define SETSOCKOPT 54
 %define BIND 49
+%define EXIT 60
 %define LISTEN 50
 %define READ 0
 %define WRITE 1
+%define CLOSE 3
+
+; Consts
+%define SOL_SOCKET 1
+%define SO_REUSEADDR 2
+%define AF_INET 2
+%define SOCK_STREAM 1
+%define STDOUT 1
+%define BUFFER_SIZE 1024
+
+%include "parse.asm"
 
 global _start
 
@@ -32,7 +43,7 @@ socket:
 .error:
     mov rdi, STDOUT
     lea rsi, [sock_error_msg]
-    mov rdx, sock_error_msg_len
+    mov rdx, sock_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -40,6 +51,15 @@ socket:
 
 .continue:
     mov dword [s], eax
+
+    mov rdi, [s]           ; socket file descriptor
+    mov rsi, SOL_SOCKET    ; level
+    mov rdx, SO_REUSEADDR  ; optname
+    mov r10, so_reuseaddr
+    mov r8 , so_reuseaddr.length
+    mov rax, SETSOCKOPT
+    syscall
+
 
     ; Mover bytes en network order
     mov bx, 8000
@@ -66,7 +86,7 @@ bind:
 .error:
     mov rdi, STDOUT
     lea rsi, [bind_error_msg]
-    mov rdx, bind_error_msg_len
+    mov rdx, bind_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -87,7 +107,7 @@ listen:
 .error:
     mov rdi, STDOUT
     lea rsi, [listen_error_msg]
-    mov rdx, listen_error_msg_len
+    mov rdx, listen_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -98,7 +118,7 @@ listen:
 write1:
     mov rdi, STDOUT
     lea rsi, [listen_msg]
-    mov rdx, listen_msg_len
+    mov rdx, listen_msg.len
     mov rax, WRITE
     syscall
 
@@ -109,7 +129,7 @@ write1:
 .error:
     mov rdi, STDOUT
     lea rsi, [write_error_msg]
-    mov rdx, write_error_msg_len
+    mov rdx, write_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -117,6 +137,7 @@ write1:
 
 .continue:
 
+mainloop:
 accept:
     mov rdi, [s]
     mov rsi, 0
@@ -141,7 +162,7 @@ read:
 .error:
     mov rdi, STDOUT
     lea rsi, [read_error_msg]
-    mov rdx, read_error_msg_len
+    mov rdx, read_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -163,7 +184,7 @@ write2:
 .error:
     mov rdi, STDOUT
     lea rsi, [write_error_msg]
-    mov rdx, write_error_msg_len
+    mov rdx, write_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -171,21 +192,34 @@ write2:
 
 .continue:
 
+parse:
+    lea rdi, [buffer]
+    call parse_filename ; Nombre del archivo en filename de parse.asm
+
+;dbg:
+;    mov rdi, STDOUT
+;    lea rsi, [filename]
+;    mov rdx, 3
+;    mov rax, WRITE
+;    syscall
+
+
 write3:
     mov rdi, [client_fd]
     lea rsi, [RES_200_OK]
-    mov rdx, RES_200_OK_LEN
+    mov rdx, RES_200_OK.len
     mov rax, WRITE
     syscall
 
     cmp rax, -1
     je .error
+    jmp mainloop
     jmp .continue
 
 .error:
     mov rdi, STDOUT
     lea rsi, [write_error_msg]
-    mov rdx, write_error_msg_len
+    mov rdx, write_error_msg.len
     mov rax, WRITE
     syscall
 
@@ -193,51 +227,54 @@ write3:
 
 .continue:
     mov rdi, [client_fd]
-    mov rax, 3
+    mov rax, CLOSE
     syscall
 
     mov rdi, [s]
-    mov rax, 3
+    mov rax, CLOSE
     syscall
 
+
     leave
-    mov rdi, 1
-    mov rax, 60
+    mov rdi, 0
+    mov rax, EXIT
     syscall
+
 
 exit_err:
     leave
     mov rdi, 1
-    mov rax, 60
+    mov rax, EXIT
     syscall
 
 section .data
-    BUFFER_SIZE: equ 1024
 
-    listen_msg: db `Escuchando en 0.0.0.0:8000\n\n`
-    listen_msg_len: equ $ - listen_msg
+    listen_msg: db "Escuchando en 0.0.0.0:8000", 0x10, 0x10
+    .len: equ $ - listen_msg
 
-    sock_error_msg: db `Error: socket\n`
-    sock_error_msg_len: equ $ - sock_error_msg
+    sock_error_msg: db "Error: socket", 0x10
+    .len: equ $ - sock_error_msg
 
-    bind_error_msg: db `Error: bind\n`
-    bind_error_msg_len: equ $ - bind_error_msg
+    bind_error_msg: db "Error: bind", 0x10
+    .len: equ $ - bind_error_msg
 
-    listen_error_msg: db `Error: listen\n`
-    listen_error_msg_len: equ $ - listen_error_msg
+    listen_error_msg: db "Error: listen", 0x10
+    .len: equ $ - listen_error_msg
 
-    write_error_msg: db `Error: write\n`
-    write_error_msg_len: equ $ - write_error_msg
+    write_error_msg: db "Error: write", 0x10
+    .len: equ $ - write_error_msg
 
-    read_error_msg: db `Error: read\n`
-    read_error_msg_len: equ $ - read_error_msg
+    read_error_msg: db "Error: read", 0x10
+    .len: equ $ - read_error_msg
 
-    RES_200_OK: db `HTTP/1.1 200 OK\r\nServer: asm\r\n\r\n`
-    RES_200_OK_LEN: equ $ - RES_200_OK
+    RES_200_OK: db "HTTP/1.1 200 OK", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
+    .len: equ $ - RES_200_OK
+
+    so_reuseaddr: dd 1
+    .length: equ $ - SO_REUSEADDR
 
 section .bss
     s: resb 4
     client_fd: resb 4
     buffer: resb 1024
     file_buffer: resb 4096
-    filename: resb 256
