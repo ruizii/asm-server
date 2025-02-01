@@ -8,7 +8,6 @@ parse_filename:
     mov rbp, rsp
 
     xor rcx, rcx
-
     lea r8, [rdi]
 
 methodname_loop:
@@ -21,17 +20,17 @@ methodname_loop:
     jmp .loop
 
 .exitloop:
-    inc rcx
-    mov byte [method+rcx], 0
+    mov byte [method + rcx], 0
     mov [method.len], rcx
     add r8, rcx
     inc r8
 
-    cmp byte [r8], 0x20
-    je exit_parse
-
 filename_loop:
     xor rcx, rcx
+
+    cmp byte [r8], '/'
+    jne .loop
+    inc r8
 
 .loop:
     mov dl, byte [r8 + rcx]
@@ -42,8 +41,7 @@ filename_loop:
     jmp .loop
 
 .exitloop:
-    inc rcx
-    mov byte [filename+rcx], 0
+    mov byte [filename + rcx], 0
     mov [filename.len], rcx
     lea rax, [filename]
 

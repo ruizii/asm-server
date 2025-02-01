@@ -1,5 +1,7 @@
 default rel
 
+%include "parse.asm"
+
 ; Syscalls
 %define ACCEPT 43
 %define SOCKET 41
@@ -9,6 +11,7 @@ default rel
 %define LISTEN 50
 %define READ 0
 %define WRITE 1
+%define OPEN 2
 %define CLOSE 3
 
 ; Consts
@@ -18,8 +21,9 @@ default rel
 %define SOCK_STREAM 1
 %define STDOUT 1
 %define BUFFER_SIZE 1024
+%define FILE_BUFFER_SIZE 8192
+%define O_RDONLY 0
 
-%include "parse.asm"
 
 global _start
 
@@ -196,13 +200,28 @@ parse:
     lea rdi, [buffer]
     call parse_filename ; Nombre del archivo en filename de parse.asm
 
-dbg:
-    mov rdi, STDOUT
-    lea rsi, [filename]
-    mov rdx, filename.len
-    mov rax, WRITE
+open_file:
+    lea rdi, [filename]
+    mov rsi, O_RDONLY
+    mov rax, OPEN
     syscall
 
+    cmp rax, -1
+    je exit_err
+
+    mov [file_fd], rax
+
+read_file:
+    mov rdi, [file_fd]
+    lea rsi, [file_buffer]
+    mov rdx, FILE_BUFFER_SIZE
+    mov rax, READ
+    syscall
+
+    cmp rax, -1
+    je exit_err
+
+    mov [content_length], rax
 
 write3:
     mov rdi, [client_fd]
@@ -225,6 +244,29 @@ write3:
     jmp exit_err
 
 .continue:
+
+write_file_contents:
+    mov rdi, [client_fd]
+    lea rsi, [file_buffer]
+    mov rdx, [content_length]
+    mov rax, WRITE
+    syscall
+
+    cmp rax, -1
+    je .error
+    jmp .continue
+
+.error:
+    mov rdi, STDOUT
+    lea rsi, [write_error_msg]
+    mov rdx, write_error_msg.len
+    mov rax, WRITE
+    syscall
+
+    jmp exit_err
+
+.continue:
+
     mov rdi, [client_fd]
     mov rax, CLOSE
     syscall
@@ -272,10 +314,13 @@ section .data
     .len: equ $ - RES_200_OK
 
     so_reuseaddr: dd 1
-    .length: equ $ - SO_REUSEADDR
+    .length: equ $ - so_reuseaddr
 
 section .bss
+    file_fd: resb 4
     s: resb 4
     client_fd: resb 4
     buffer: resb 1024
-    file_buffer: resb 4096
+
+    file_buffer: resb FILE_BUFFER_SIZE
+    content_length: resb 128
