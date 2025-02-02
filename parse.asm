@@ -36,16 +36,16 @@ filename_loop:
     mov dl, byte [r8 + rcx]
     cmp dl, 0x20 ; espacio
     je .exitloop
-    mov byte [filename + rcx], dl
+    mov byte [_filename + rcx], dl
     inc rcx
     jmp .loop
 
 .exitloop:
-    mov byte [filename + rcx], 0
-    mov [filename.len], rcx
-    lea rax, [filename]
+    mov byte [_filename + rcx], 0
+    mov [_filename.len], rcx
 
 exit_parse:
+    lea rax, [_filename]
     leave
     ret
 
@@ -53,5 +53,5 @@ section .bss
     method: resb 128
     .len: resb 8
 
-    filename: resb 256
+    _filename: resb 256
     .len: resb 8

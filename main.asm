@@ -219,7 +219,7 @@ parse:
     call parse_filename ; Nombre del archivo en filename de parse.asm
 
 open_file:
-    lea rdi, [filename]
+    lea rdi, [rax]
     mov rsi, O_RDONLY
     mov rax, OPEN
     syscall
