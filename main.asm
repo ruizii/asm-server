@@ -4,6 +4,7 @@ default rel
 
 ; Syscalls
 %define ACCEPT 43
+%define FORK 57
 %define SOCKET 41
 %define SETSOCKOPT 54
 %define BIND 49
@@ -152,6 +153,23 @@ accept:
 
     mov [client_fd], eax
 
+    mov rax, FORK
+    syscall
+
+    cmp rax, 0
+    je child
+
+    mov rdi, [client_fd]
+
+    mov rax, CLOSE
+    syscall
+    jmp mainloop
+
+child:
+    mov rdi, [s]
+    mov rax, CLOSE
+    syscall
+
 read:
     mov rdi, [client_fd]
     lea rsi, [buffer]
@@ -266,23 +284,19 @@ write_file_contents:
     jmp exit_err
 
 .continue:
+    mov rdi, [file_fd]
+    mov rax, CLOSE
+    syscall
 
     mov rdi, [client_fd]
     mov rax, CLOSE
     syscall
 
-    jmp mainloop
-
 exit:
-    mov rdi, [s]
-    mov rax, CLOSE
-    syscall
-
     leave
     mov rdi, 0
     mov rax, EXIT
     syscall
-
 
 exit_err:
     leave
