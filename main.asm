@@ -217,6 +217,8 @@ write2:
 parse:
     lea rdi, [buffer]
     call parse_filename ; Nombre del archivo en rax
+    cmp rax, 0
+    je invalid_file_parsed
 
 open_file:
     lea rdi, [rax]
@@ -312,12 +314,31 @@ not_found:
     mov rax, WRITE
     syscall
 
+    mov rdi, [client_fd]
+    mov rax, CLOSE
+    syscall
+
     leave
     mov rdi, 0
     mov rax, EXIT
     syscall
 
-    jmp exit
+invalid_file_parsed:
+    mov rdi, [client_fd]
+    lea rsi, [RES_400_BAD_REQUEST]
+    mov rdx, RES_400_BAD_REQUEST.len
+    mov rax, WRITE
+    syscall
+
+    mov rdi, [client_fd]
+    mov rax, CLOSE
+    syscall
+
+    leave
+    mov rdi, 0
+    mov rax, EXIT
+    syscall
+
 
 section .data
 
@@ -344,6 +365,9 @@ section .data
 
     RES_404_NOT_FOUND: db "HTTP/1.1 404 Not found", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
     .len: equ $ - RES_404_NOT_FOUND
+
+    RES_400_BAD_REQUEST: db "HTTP/1.1 400 Bad request", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
+    .len: equ $ - RES_400_BAD_REQUEST
 
     so_reuseaddr: dd 1
     .length: equ $ - so_reuseaddr
