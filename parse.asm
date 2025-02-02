@@ -28,9 +28,11 @@ methodname_loop:
 filename_loop:
     xor rcx, rcx
 
+remove_slash:
     cmp byte [r8], '/'
     jne .loop
     inc r8
+    jmp remove_slash
 
 .loop:
     mov dl, byte [r8 + rcx]

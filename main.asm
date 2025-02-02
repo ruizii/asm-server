@@ -42,7 +42,7 @@ socket:
     syscall ; rax tiene el socket
 
     cmp rax, 0
-    jb .error
+    jl .error
     jmp .continue
 
 .error:
@@ -216,7 +216,7 @@ write2:
 
 parse:
     lea rdi, [buffer]
-    call parse_filename ; Nombre del archivo en filename de parse.asm
+    call parse_filename ; Nombre del archivo en rax
 
 open_file:
     lea rdi, [rax]
@@ -224,8 +224,8 @@ open_file:
     mov rax, OPEN
     syscall
 
-    cmp rax, -1
-    je exit_err
+    cmp eax, -1
+    jl not_found
 
     mov [file_fd], rax
 
@@ -284,6 +284,8 @@ write_file_contents:
     jmp exit_err
 
 .continue:
+
+exit:
     mov rdi, [file_fd]
     mov rax, CLOSE
     syscall
@@ -292,7 +294,6 @@ write_file_contents:
     mov rax, CLOSE
     syscall
 
-exit:
     leave
     mov rdi, 0
     mov rax, EXIT
@@ -303,6 +304,20 @@ exit_err:
     mov rdi, 1
     mov rax, EXIT
     syscall
+
+not_found:
+    mov rdi, [client_fd]
+    lea rsi, [RES_404_NOT_FOUND]
+    mov rdx, RES_404_NOT_FOUND.len
+    mov rax, WRITE
+    syscall
+
+    leave
+    mov rdi, 0
+    mov rax, EXIT
+    syscall
+
+    jmp exit
 
 section .data
 
@@ -326,6 +341,9 @@ section .data
 
     RES_200_OK: db "HTTP/1.1 200 OK", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
     .len: equ $ - RES_200_OK
+
+    RES_404_NOT_FOUND: db "HTTP/1.1 404 Not found", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
+    .len: equ $ - RES_404_NOT_FOUND
 
     so_reuseaddr: dd 1
     .length: equ $ - so_reuseaddr
