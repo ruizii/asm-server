@@ -55,6 +55,9 @@ filename_loop:
 
 .validation:
 .loop:
+    cmp byte [r8], ' '
+    je return_index
+
     mov dl, byte [r8 + rcx]        ; Siguiente caracter en dl
 
     cmp dl, ' '                    ; Si es un espacio, se llegó al final del nombre
@@ -78,6 +81,11 @@ exit_parse:
 
 invalid_path:
     xor rax, rax ; Return NULL
+    leave
+    ret
+
+return_index:
+    mov rax, -1 ; -1 significará que el cliente pidió el root ('/')
     leave
     ret
 

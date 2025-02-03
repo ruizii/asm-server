@@ -217,8 +217,12 @@ write2:
 parse:
     lea rdi, [buffer]
     call parse_filename ; Nombre del archivo en rax
-    cmp rax, 0
+
+    cmp rax, 0          ; Si hubo un error en el parseo
     je invalid_file_parsed
+    cmp rax, -1         ; Si el cliente solicitó la raíz
+    jne open_file
+    lea rax, [index]
 
 open_file:
     lea rdi, [rax]
@@ -368,6 +372,8 @@ section .data
 
     RES_400_BAD_REQUEST: db "HTTP/1.1 400 Bad request", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
     .len: equ $ - RES_400_BAD_REQUEST
+
+    index: db "index.html", 0x00
 
     so_reuseaddr: dd 1
     .length: equ $ - so_reuseaddr
