@@ -1,5 +1,5 @@
-/main
 *.o
-/.gdb_history
-/index.html
-/css*
+.gdb_history
+index.html
+css/
+build/
