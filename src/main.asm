@@ -404,4 +404,4 @@ section .bss
 
     buffer: resb 1024
     file_buffer: resb FILE_BUFFER_SIZE
-    content_length: resb 129
+    content_length: resb 4
