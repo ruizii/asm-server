@@ -10,6 +10,7 @@ default rel
 global parse_filename
 
 %define MAX_PATH 256
+%define INDEX_CODE -1
 
 section .text
 parse_filename:
@@ -38,7 +39,7 @@ methodname_loop:
     inc r8
 
 ;
-; Extraer el nombre del archivo y retornar un puntero a él
+; Extraer el nombre del archivo y retornar un puntero a su nombre
 ;
 filename_loop:
     xor rcx, rcx
@@ -85,7 +86,7 @@ invalid_path:
     ret
 
 return_index:
-    mov rax, -1 ; -1 significará que el cliente pidió el root ('/')
+    mov rax, INDEX_CODE
     leave
     ret
 

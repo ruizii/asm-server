@@ -1,6 +1,6 @@
 default rel
 
-%include "parse.asm"
+%include "./src/parse.asm"
 
 ; Syscalls
 %define ACCEPT 43
@@ -57,9 +57,9 @@ socket:
 .continue:
     mov dword [s], eax
 
-    mov rdi, [s]           ; socket file descriptor
-    mov rsi, SOL_SOCKET    ; level
-    mov rdx, SO_REUSEADDR  ; optname
+    mov rdi, [s]             ; socket file descriptor
+    mov rsi, SOL_SOCKET      ; level
+    mov rdx, SO_REUSEADDR    ; optname
     mov r10, so_reuseaddr
     mov r8 , so_reuseaddr.length
     mov rax, SETSOCKOPT
@@ -235,18 +235,6 @@ open_file:
 
     mov [file_fd], rax
 
-read_file:
-    mov rdi, [file_fd]
-    lea rsi, [file_buffer]
-    mov rdx, FILE_BUFFER_SIZE
-    mov rax, READ
-    syscall
-
-    cmp rax, -1
-    je exit_err
-
-    mov [content_length], rax
-
 write3:
     mov rdi, [client_fd]
     lea rsi, [RES_200_OK]
@@ -269,7 +257,29 @@ write3:
 
 .continue:
 
-write_file_contents:
+; Lee los contenidos del archivo y los pone en el buffer [file_buffer]
+;
+;     -    Si la syscall retorna -1, hubo un error con read
+;     -    Si la syscall retorn 0, se terminó de leer el contenido del archivo
+;     -    Si retorna cualquier otro valor, se leyó contenido y la cantidad de bytes
+;          se guarda en [content_length]
+;
+read_write_loop:
+.read_file:
+    mov rdi, [file_fd]
+    lea rsi, [file_buffer]
+    mov rdx, FILE_BUFFER_SIZE
+    mov rax, READ
+    syscall
+
+    cmp rax, -1
+    je .read_file_error
+    cmp rax, 0
+    je .continue
+
+    mov [content_length], rax
+
+.write_file_contents:
     mov rdi, [client_fd]
     lea rsi, [file_buffer]
     mov rdx, [content_length]
@@ -277,10 +287,20 @@ write_file_contents:
     syscall
 
     cmp rax, -1
-    je .error
-    jmp .continue
+    je .write_file_error
+    jmp .read_file
 
-.error:
+; Errores
+.read_file_error:
+    mov rdi, STDOUT
+    lea rsi, [read_error_msg]
+    mov rdx, read_error_msg.len
+    mov rax, WRITE
+    syscall
+
+    jmp exit_err
+
+.write_file_error:
     mov rdi, STDOUT
     lea rsi, [write_error_msg]
     mov rdx, write_error_msg.len
@@ -345,7 +365,6 @@ invalid_file_parsed:
 
 
 section .data
-
     listen_msg: db "Escuchando en 0.0.0.0:8000", 0x0a, 0x0a
     .len: equ $ - listen_msg
 
@@ -382,7 +401,7 @@ section .bss
     file_fd: resb 4
     s: resb 4
     client_fd: resb 4
-    buffer: resb 1024
 
+    buffer: resb 1024
     file_buffer: resb FILE_BUFFER_SIZE
-    content_length: resb 128
+    content_length: resb 129
