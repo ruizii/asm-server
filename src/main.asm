@@ -25,6 +25,15 @@ default rel
 %define FILE_BUFFER_SIZE 8192
 %define O_RDONLY 0
 
+; Colors
+%define RED     `\x1b[31m`;
+%define GREEN   `\x1b[32m`;
+%define YELLOW  `\x1b[33m`;
+%define BLUE    `\x1b[34m`;
+%define MAGENTA `\x1b[35m`;
+%define CYAN    `\x1b[36m`;
+%define RESET   `\x1b[0m`;
+
 
 global _start
 
@@ -365,7 +374,7 @@ invalid_file_parsed:
 
 
 section .data
-    listen_msg: db "Escuchando en 0.0.0.0:8000", 0x0a, 0x0a
+    listen_msg: db 0x0a, BLUE, "[+] ", RESET, "Escuchando en: ", BLUE, "0.0.0.0:8000", RESET, 0x0a, 0x0a
     .len: equ $ - listen_msg
 
     sock_error_msg: db "Error: socket", 0x0a
