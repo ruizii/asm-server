@@ -4,11 +4,6 @@
 ; solicitados por el cliente
 ;
 ;
-
-default rel
-
-global parse_filename
-
 %define MAX_PATH 256
 %define INDEX_CODE -1
 
