@@ -3,5 +3,4 @@ all:
 	nasm -felf64 ./src/main.asm && ld ./src/main.o -o ./build/asm-server
 
 clean:
-	rm -f ./build/*
-	rm -f ./src/*.o
+	rm -f ./build/* ./src/*.o
