@@ -374,7 +374,7 @@ invalid_file_parsed:
 
 
 section .data
-listen_msg: db "[", BLUE, "+", RESET, "] ", "Escuchando en: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "8000", RESET, 0x0a, 0x0a
+    listen_msg: db "[", BLUE, "+", RESET, "] ", "Escuchando en: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "8000", RESET, 0x0a, 0x0a
     .len: equ $ - listen_msg
 
     sock_error_msg: db "Error: socket", 0x0a
