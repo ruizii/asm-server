@@ -76,7 +76,7 @@ socket:
 
 
     ; Mover bytes en network order
-    mov bx, 8000
+    mov bx, 80
     mov ah, bl
     mov al, bh
 
@@ -374,7 +374,7 @@ invalid_file_parsed:
 
 
 section .data
-    listen_msg: db "[", BLUE, "+", RESET, "] ", "Escuchando en: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "8000", RESET, 0x0a, 0x0a
+    listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "80", RESET, 0x0a, 0x0a
     .len: equ $ - listen_msg
 
     sock_error_msg: db "Error: socket", 0x0a
@@ -405,6 +405,7 @@ section .data
 
     so_reuseaddr: dd 1
     .length: equ $ - so_reuseaddr
+
 
 section .bss
     file_fd: resb 4
