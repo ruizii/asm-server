@@ -41,7 +41,7 @@ section .text
 _start:
     push rbp
     mov rbp, rsp
-    sub rsp, 16
+    sub rsp, 32
 
 socket:
     mov rdi, AF_INET
