@@ -158,6 +158,7 @@ accept:
     mov rax, ACCEPT
     syscall
     cmp rax, 0
+    jl mainloop
 
     mov [client_fd], eax
 
