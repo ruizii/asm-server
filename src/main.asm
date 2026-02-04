@@ -76,9 +76,8 @@ socket:
 
 
     ; Mover bytes en network order
-    mov bx, 80
-    mov ah, bl
-    mov al, bh
+    mov ax, 80
+    xchg al, ah
 
     ; struct sockaddr_in
     mov word [rsp], AF_INET  ; sin_family
