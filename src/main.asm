@@ -160,21 +160,21 @@ accept:
     cmp rax, 0
     jl mainloop
 
-    mov [client_fd], eax
+    push rax
 
     mov rax, FORK
     syscall
+    test rax, rax
+    jz child
 
-    cmp rax, 0
-    je child
-
-    mov rdi, [client_fd]
-
+    pop rdi
     mov rax, CLOSE
     syscall
     jmp mainloop
-
+    
 child:
+    pop rdi
+    mov [client_fd], edi
     mov rdi, [s]
     mov rax, CLOSE
     syscall
