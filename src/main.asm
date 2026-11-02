@@ -10,6 +10,7 @@ default rel
 %define BIND 49
 %define EXIT 60
 %define LISTEN 50
+%define CHDIR 80
 %define READ 0
 %define WRITE 1
 %define OPEN 2
@@ -49,6 +50,27 @@ _start:
     push rbp
     mov rbp, rsp
     sub rsp, 32
+
+chdir:
+    cmp qword [rbp + 8], 2  ; argc
+    jl socket
+
+    mov rdi, [rbp + 24]
+    mov rax, CHDIR
+    syscall
+
+    test rax, rax
+    js .error
+    jmp socket
+
+.error:
+    mov rdi, STDOUT
+    lea rsi, [chdir_error_msg]
+    mov rdx, chdir_error_msg.len
+    mov rax, WRITE
+    syscall
+
+    jmp exit_err
 
 socket:
     mov rdi, AF_INET
@@ -188,7 +210,7 @@ accept:
     mov rax, CLOSE
     syscall
     jmp mainloop
-    
+
 child:
     pop rdi
     mov [client_fd], rdi
@@ -422,6 +444,9 @@ section .data
 
     write_error_msg: db "Error: write", 0x0a
     .len: equ $ - write_error_msg
+
+    chdir_error_msg: db "Error: chdir", 0x0a
+    .len: equ $ - chdir_error_msg
 
     read_error_msg: db "Error: read", 0x0a
     .len: equ $ - read_error_msg
