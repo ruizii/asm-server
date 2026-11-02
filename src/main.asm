@@ -105,7 +105,7 @@ socket:
 
 
     ; Mover bytes en network order
-    mov ax, 80
+    mov ax, 8000
     xchg al, ah
 
     ; struct sockaddr_in
@@ -430,7 +430,7 @@ invalid_file_parsed:
 
 
 section .data
-    listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "80", RESET, 0x0a, 0x0a
+    listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "8000", RESET, 0x0a, 0x0a
     .len: equ $ - listen_msg
 
     sock_error_msg: db "Error: socket", 0x0a
