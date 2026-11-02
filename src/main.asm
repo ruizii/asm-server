@@ -11,6 +11,7 @@ default rel
 %define EXIT 60
 %define LISTEN 50
 %define CHDIR 80
+%define GETCWD 79
 %define READ 0
 %define WRITE 1
 %define OPEN 2
@@ -27,6 +28,7 @@ default rel
 %define BUFFER_SIZE 1024
 %define FILE_BUFFER_SIZE 8192
 %define O_RDONLY 0
+%define PATH_MAX 4096
 %define SIGCHLD 17
 %define STAT_SIZE 144
 %define ST_MODE 24           ; Offset de st_mode en struct stat
@@ -163,6 +165,30 @@ listen:
 
 .continue:
 
+; Ruta absoluta del directorio que se sirve, para mostrarla al iniciar
+cwd:
+    lea rdi, [cwd_buffer]
+    mov rsi, PATH_MAX
+    mov rax, GETCWD
+    syscall
+
+    test rax, rax
+    js .error
+    dec rax                  ; getcwd cuenta el null terminator
+    mov [cwd_len], rax
+    jmp .continue
+
+.error:
+    mov rdi, STDOUT
+    lea rsi, [getcwd_error_msg]
+    mov rdx, getcwd_error_msg.len
+    mov rax, WRITE
+    syscall
+
+    jmp exit_err
+
+.continue:
+
 write1:
     mov rdi, STDOUT
     lea rsi, [listen_msg]
@@ -181,6 +207,24 @@ write1:
     mov rdi, STDOUT
     lea rsi, [listen_msg_end]
     mov rdx, listen_msg_end.len
+    mov rax, WRITE
+    syscall
+
+    mov rdi, STDOUT
+    lea rsi, [serving_msg]
+    mov rdx, serving_msg.len
+    mov rax, WRITE
+    syscall
+
+    mov rdi, STDOUT
+    lea rsi, [cwd_buffer]
+    mov rdx, [cwd_len]
+    mov rax, WRITE
+    syscall
+
+    mov rdi, STDOUT
+    lea rsi, [serving_msg_end]
+    mov rdx, serving_msg_end.len
     mov rax, WRITE
     syscall
 
@@ -453,8 +497,17 @@ section .data
     listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE
     .len: equ $ - listen_msg
 
-    listen_msg_end: db RESET, 0x0a, 0x0a
+    listen_msg_end: db RESET, 0x0a
     .len equ $ - listen_msg_end
+
+    serving_msg: db "[", BLUE, "+", RESET, "] ", "Serving: ", BLUE
+    .len: equ $ - serving_msg
+
+    serving_msg_end: db RESET, 0x0a, 0x0a
+    .len: equ $ - serving_msg_end
+
+    getcwd_error_msg: db "Error: getcwd", 0x0a
+    .len: equ $ - getcwd_error_msg
 
     sock_error_msg: db "Error: socket", 0x0a
     .len: equ $ - sock_error_msg
@@ -501,3 +554,6 @@ section .bss
     file_buffer: resb FILE_BUFFER_SIZE
     content_length: resq 1
     file_stat: resb STAT_SIZE
+
+    cwd_buffer: resb PATH_MAX
+    cwd_len: resq 1

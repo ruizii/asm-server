@@ -138,9 +138,9 @@ port_error:
     syscall
 
 section .data
-    usage_msg: db BLUE, "Usage:", MAGENTA, " asm-server ",RESET, "[", CYAN, "-d", YELLOW, " DIR", RESET, "] [",CYAN, "-p", YELLOW, " PORT", RESET, "]", 0x0a, 0x0a
-               db CYAN, "  -d ", YELLOW, "DIR   ", RESET, "serve files from DIR (default:", YELLOW, " current directory", RESET, ")", 0x0a
-               db CYAN, "  -p ", YELLOW, "PORT  ", RESET,  "listen on PORT, 1-65535 (default:", YELLOW, " 8000", RESET, ")", 0x0a
+    usage_msg: db BLUE, "Usage:", RESET, " asm-server [", CYAN, "-d", YELLOW, " DIR", RESET, "] [",CYAN, "-p", YELLOW, " PORT", RESET, "]", 0x0a, 0x0a
+               db CYAN, "  -d ", YELLOW, "DIR   ", RESET, "serve files from", YELLOW, " DIR", RESET, " (default: current directory)", 0x0a
+               db CYAN, "  -p ", YELLOW, "PORT  ", RESET,  "listen on", YELLOW, " PORT", RESET, " 1-65535 (default: 8000)", 0x0a
                db CYAN, "  -h       ", RESET, "show this help", 0x0a
     .len: equ $ - usage_msg
 

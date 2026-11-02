@@ -4,6 +4,7 @@ A small static-file HTTP server written in x86-64 assembly without libc for Linu
 
 ```
 [+] Listening on: 0.0.0.0:8000
+[+] Serving /home/user/site
 
 GET / HTTP/1.1
 Host: localhost:8000
