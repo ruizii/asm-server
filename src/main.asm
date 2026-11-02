@@ -103,6 +103,7 @@ socket:
 .continue:
     mov [s], rax
 
+reuseaddr:
     mov rdi, [s]             ; socket file descriptor
     mov rsi, SOL_SOCKET      ; level
     mov rdx, SO_REUSEADDR    ; optname
@@ -111,7 +112,20 @@ socket:
     mov rax, SETSOCKOPT
     syscall
 
+    test rax, rax
+    js .error
+    jmp .continue
 
+.error:
+    mov rdi, STDOUT
+    lea rsi, [setsockopt_error_msg]
+    mov rdx, setsockopt_error_msg.len
+    mov rax, WRITE
+    syscall
+
+    jmp exit_err
+
+.continue:
     ; Mover bytes en network order
     mov ax, [port]
     xchg al, ah
@@ -526,6 +540,9 @@ section .data
 
     read_error_msg: db "Error: read", 0x0a
     .len: equ $ - read_error_msg
+
+    setsockopt_error_msg: db "Error: setsockopt", 0x0a
+    .len: equ $ - setsockopt_error_msg
 
     RES_200_OK: db "HTTP/1.1 200 OK", 0x0d, 0x0a, "Server: asm", 0x0d, 0x0a, 0x0d, 0x0a
     .len: equ $ - RES_200_OK
