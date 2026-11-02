@@ -5,6 +5,7 @@
 ;
 ;
 %define MAX_PATH 256
+%define MAX_METHOD 128
 %define INDEX_CODE -1
 
 section .text
@@ -23,6 +24,10 @@ methodname_loop:
     mov dl, byte [r8 + rcx]
     cmp dl, ' '
     je .exitloop
+    test dl, dl                    ; Fin de la petición sin encontrar un espacio
+    jz invalid_request
+    cmp rcx, MAX_METHOD - 1        ; Deja espacio para el null terminator
+    je invalid_request
     mov byte [_methodname + rcx], dl
     inc rcx
     jmp .loop
@@ -58,12 +63,20 @@ filename_loop:
 
     cmp dl, ' '                    ; Si es un espacio, se llegó al final del nombre
     je .exitloop
+    test dl, dl                    ; Fin de la petición sin encontrar un espacio
+    jz invalid_request
 
+    cmp dl, '.'                    ; Verificación de path traversal
+    jne .store
+    cmp byte [r8 + rcx + 1], '.'
+    je invalid_request
+
+.store:
     mov byte [_filename + rcx], dl ; Se guarda el caracter en _filename
 
     inc rcx
     cmp rcx, MAX_PATH              ; Si supera 256, se supera el limite de caracteres
-    je invalid_path
+    je invalid_request
     jmp .loop
 
 .exitloop:
@@ -75,7 +88,7 @@ exit_parse:
     leave
     ret
 
-invalid_path:
+invalid_request:
     xor rax, rax ; Return NULL
     leave
     ret
@@ -86,7 +99,7 @@ return_index:
     ret
 
 section .bss
-    _methodname: resb 128
+    _methodname: resb MAX_METHOD
     .len: resb 8
 
     _filename: resb MAX_PATH

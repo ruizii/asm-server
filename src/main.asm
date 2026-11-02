@@ -14,6 +14,8 @@ default rel
 %define WRITE 1
 %define OPEN 2
 %define CLOSE 3
+%define FSTAT 5
+%define RT_SIGACTION 13
 
 ; Consts
 %define SOL_SOCKET 1
@@ -24,6 +26,11 @@ default rel
 %define BUFFER_SIZE 1024
 %define FILE_BUFFER_SIZE 8192
 %define O_RDONLY 0
+%define SIGCHLD 17
+%define STAT_SIZE 144
+%define ST_MODE 24           ; Offset de st_mode en struct stat
+%define S_IFMT 0o170000
+%define S_IFREG 0o100000
 
 ; Colors
 %define RED     `\x1b[31m`;
@@ -64,7 +71,7 @@ socket:
     jmp exit_err
 
 .continue:
-    mov dword [s], eax
+    mov [s], rax
 
     mov rdi, [s]             ; socket file descriptor
     mov rsi, SOL_SOCKET      ; level
@@ -135,8 +142,8 @@ write1:
     mov rax, WRITE
     syscall
 
-    cmp rax, -1
-    je .error
+    test rax, rax            ; Las syscalls retornan -errno si fallan
+    js .error
     jmp .continue
 
 .error:
@@ -149,6 +156,16 @@ write1:
     jmp exit_err
 
 .continue:
+
+; Ignorar SIGCHLD hace que el kernel limpie a los hijos que terminan,
+; así no se acumulan procesos zombie
+signals:
+    mov rdi, SIGCHLD
+    lea rsi, [sigchld_ignore]
+    mov rdx, 0
+    mov r10, 8               ; sizeof(sigset_t)
+    mov rax, RT_SIGACTION
+    syscall
 
 mainloop:
 accept:
@@ -174,7 +191,7 @@ accept:
     
 child:
     pop rdi
-    mov [client_fd], edi
+    mov [client_fd], rdi
     mov rdi, [s]
     mov rax, CLOSE
     syscall
@@ -182,12 +199,12 @@ child:
 read:
     mov rdi, [client_fd]
     lea rsi, [buffer]
-    mov rdx, BUFFER_SIZE
+    mov rdx, BUFFER_SIZE - 1 ; Deja espacio para el null terminator
     mov rax, READ
     syscall
 
-    cmp rax, -1
-    je .error
+    test rax, rax            ; Las syscalls retornan -errno si fallan
+    js .error
     jmp .continue
 
 .error:
@@ -200,6 +217,7 @@ read:
     jmp exit_err
 
 .continue:
+    mov byte [buffer + rax], 0
 
 write2:
     mov rdi, STDOUT
@@ -208,8 +226,8 @@ write2:
     mov rax, WRITE
     syscall
 
-    cmp rax, -1
-    je .error
+    test rax, rax            ; Las syscalls retornan -errno si fallan
+    js .error
     jmp .continue
 
 .error:
@@ -239,10 +257,26 @@ open_file:
     mov rax, OPEN
     syscall
 
-    cmp eax, -1
-    jl not_found
+    test rax, rax
+    js not_found
 
     mov [file_fd], rax
+
+; Solo se sirven archivos regulares. Un directorio se puede abrir, pero
+; read retorna -EISDIR
+check_regular_file:
+    mov rdi, rax
+    lea rsi, [file_stat]
+    mov rax, FSTAT
+    syscall
+
+    test rax, rax
+    js not_found
+
+    mov eax, [file_stat + ST_MODE]
+    and eax, S_IFMT
+    cmp eax, S_IFREG
+    jne not_found
 
 write3:
     mov rdi, [client_fd]
@@ -251,8 +285,8 @@ write3:
     mov rax, WRITE
     syscall
 
-    cmp rax, -1
-    je .error
+    test rax, rax            ; Las syscalls retornan -errno si fallan
+    js .error
     jmp .continue
 
 .error:
@@ -281,8 +315,8 @@ read_write_loop:
     mov rax, READ
     syscall
 
-    cmp rax, -1
-    je .read_file_error
+    test rax, rax
+    js .read_file_error
     cmp rax, 0
     je .continue
 
@@ -295,8 +329,8 @@ read_write_loop:
     mov rax, WRITE
     syscall
 
-    cmp rax, -1
-    je .write_file_error
+    test rax, rax
+    js .write_file_error
     jmp .read_file
 
 ; Errores
@@ -406,12 +440,16 @@ section .data
     so_reuseaddr: dd 1
     .length: equ $ - so_reuseaddr
 
+    ; struct sigaction: sa_handler = SIG_IGN, sa_flags, sa_restorer, sa_mask
+    sigchld_ignore: dq 1, 0, 0, 0
+
 
 section .bss
-    file_fd: resb 4
-    s: resb 4
-    client_fd: resb 4
+    file_fd: resq 1
+    s: resq 1
+    client_fd: resq 1
 
-    buffer: resb 1024
+    buffer: resb BUFFER_SIZE
     file_buffer: resb FILE_BUFFER_SIZE
-    content_length: resb 4
+    content_length: resq 1
+    file_stat: resb STAT_SIZE
