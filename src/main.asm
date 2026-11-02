@@ -42,6 +42,8 @@ default rel
 %define CYAN    `\x1b[36m`;
 %define RESET   `\x1b[0m`;
 
+%include "./src/args.asm"
+
 
 global _start
 
@@ -51,11 +53,15 @@ _start:
     mov rbp, rsp
     sub rsp, 32
 
-chdir:
-    cmp qword [rbp + 8], 2  ; argc
-    jl socket
+args:
+    lea rdi, [rbp + 16]
+    call parse_args
 
-    mov rdi, [rbp + 24]
+chdir:
+    mov rdi, [dir]
+    test rdi, rdi
+    jz socket
+
     mov rax, CHDIR
     syscall
 
@@ -105,7 +111,7 @@ socket:
 
 
     ; Mover bytes en network order
-    mov ax, 8000
+    mov ax, [port]
     xchg al, ah
 
     ; struct sockaddr_in
@@ -161,6 +167,20 @@ write1:
     mov rdi, STDOUT
     lea rsi, [listen_msg]
     mov rdx, listen_msg.len
+    mov rax, WRITE
+    syscall
+
+    mov rdi, [port_str]
+    call strlen
+    mov rdx, rax
+    mov rdi, STDOUT
+    mov rsi, [port_str]
+    mov rax, WRITE
+    syscall
+
+    mov rdi, STDOUT
+    lea rsi, [listen_msg_end]
+    mov rdx, listen_msg_end.len
     mov rax, WRITE
     syscall
 
@@ -430,8 +450,11 @@ invalid_file_parsed:
 
 
 section .data
-    listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE, "8000", RESET, 0x0a, 0x0a
+    listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE
     .len: equ $ - listen_msg
+
+    listen_msg_end: db RESET, 0x0a, 0x0a
+    .len equ $ - listen_msg_end
 
     sock_error_msg: db "Error: socket", 0x0a
     .len: equ $ - sock_error_msg

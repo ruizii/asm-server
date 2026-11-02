@@ -40,15 +40,33 @@ make clean    # removes build artifacts
 ## Usage
 
 ```sh
-./build/asm-server [directory]
+./build/asm-server [-d dir] [-p port]
 ```
 
-The server serves files from `directory`, or from the current directory if
-none is given, and listens on port **8000** on all interfaces.
+| Flag | Description | Default |
+| --- | --- | --- |
+| `-d dir` | Directory to serve files from | Current directory |
+| `-p port` | Port to listen on (1-65535) | `8000` |
+| `-h` | Show the help message | |
+
+The server listens on all interfaces. For example:
+
+```sh
+./build/asm-server -d ./site -p 8080
+```
+
+Ports below 1024 require root, or the capability to bind them:
+
+```sh
+sudo setcap cap_net_bind_service=+ep build/asm-server
+```
 
 ## How it works
 
 ```
+parse args ─► chdir(dir)
+                  │
+                  ▼
 socket ─► setsockopt(SO_REUSEADDR) ─► bind ─► listen
                                                  │
             ┌────────────────────────────────────┘
@@ -65,6 +83,7 @@ socket ─► setsockopt(SO_REUSEADDR) ─► bind ─► listen
 ```
 
 - **`src/main.asm`**: the entry point (`_start`), socket setup, the accept loop and the request handling in the child process.
+- **`src/args.asm`**: `parse_args`, which reads the `-d`, `-p` and `-h` flags, and `parse_port`, which converts the port string to a number and validates it.
 - **`src/parse.asm`**: `parse_filename`, which extracts the method and the requested path from the request line, strips leading slashes, and validates the path.
 
 The child reads the file in 8 KB chunks and writes each chunk directly to the
@@ -75,7 +94,6 @@ client socket. The response ends when the connection is closed.
 This is a learning project, not a production server.
 
 - IPv4 only
-- The port is fixed at build time
 - The HTTP method is ignored: every request is treated as a `GET`
 - No `Content-Type` or `Content-Length` headers
 - Query strings (`?a=1`) and percent-encoding (`%20`) aren't handled
