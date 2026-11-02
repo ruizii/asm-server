@@ -388,7 +388,7 @@ write3:
 
 ; Lee los contenidos del archivo y los pone en el buffer [file_buffer]
 ;
-;     -    Si la syscall retorna -1, hubo un error con read
+;     -    Si la syscall retorna un valor negativo, hubo un error con read
 ;     -    Si la syscall retorn 0, se terminó de leer el contenido del archivo
 ;     -    Si retorna cualquier otro valor, se leyó contenido y la cantidad de bytes
 ;          se guarda en [content_length]
