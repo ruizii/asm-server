@@ -6,6 +6,11 @@ parse_args:
     mov rbp, rsp
     push rbx
 
+    ; Valores por defecto
+    mov word [port], 8000
+    lea rax, [default_port_str]
+    mov [port_str], rax
+
     lea rbx, [rdi + 8] ; Salta argv[0]
 
 .loop:
@@ -137,7 +142,7 @@ port_error:
     mov rax, EXIT
     syscall
 
-section .data
+section .rodata
     usage_msg: db BLUE, "Usage:", RESET, " asm-server [", CYAN, "-d", YELLOW, " DIR", RESET, "] [",CYAN, "-p", YELLOW, " PORT", RESET, "]", 0x0a, 0x0a
                db CYAN, "  -d ", YELLOW, "DIR   ", RESET, "serve files from", YELLOW, " DIR", RESET, " (default: current directory)", 0x0a
                db CYAN, "  -p ", YELLOW, "PORT  ", RESET,  "listen on", YELLOW, " PORT", RESET, " 1-65535 (default: 8000)", 0x0a
@@ -149,8 +154,7 @@ section .data
 
     default_port_str: db "8000", 0
 
-    port: dw 8000
-    port_str: dq default_port_str
-
 section .bss
+    port: resw 1
+    port_str: resq 1
     dir: resq 1

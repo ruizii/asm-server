@@ -34,7 +34,7 @@ sudo apt install nasm binutils make
 ## Building
 
 ```sh
-make          # small release build (~5 KB, no symbols)
+make          # small release build (~3 KB, no symbols)
 make debug    # debug build
 make clean    # removes build artifacts
 ```

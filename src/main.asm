@@ -507,7 +507,7 @@ invalid_file_parsed:
     syscall
 
 
-section .data
+section .rodata
     listen_msg: db "[", BLUE, "+", RESET, "] ", "Listening on: ", BLUE, "0.0.0.0", RESET, ":", BLUE
     .len: equ $ - listen_msg
 
