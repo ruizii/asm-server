@@ -34,7 +34,8 @@ sudo apt install nasm binutils make
 ## Building
 
 ```sh
-make          # produces build/asm-server
+make          # small release build (~5 KB, no symbols)
+make debug    # debug build
 make clean    # removes build artifacts
 ```
 
